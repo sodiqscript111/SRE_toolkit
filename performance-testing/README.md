@@ -1,6 +1,6 @@
-# Performance & Load Testing with k6
+# Performance & Load Testing
 
-Performance testing is not merely verifying that an application functions under minimal load; it is finding the precise boundary where a system transitions from stable operation to degraded latency, resource saturation, and failure.
+Performance testing is finding the boundary where a system transitions from stable operation to degraded latency, resource saturation, and failure.
 
 ---
 
@@ -8,24 +8,17 @@ Performance testing is not merely verifying that an application functions under 
 
 ```mermaid
 flowchart LR
-    Smoke["1. Smoke Test (1-5 VUs, Verify endpoints)"]
-    Load["2. Load Test (Expected peak concurrency)"]
-    Stress["3. Stress Test (Push past capacity to failure)"]
-    Spike["4. Spike Test (Instantaneous surge)"]
-    Soak["5. Soak Test (Sustained load over hours for leaks)"]
-
-    Smoke --> Load --> Stress
-    Load --> Spike
-    Load --> Soak
+    Smoke["1. Smoke Test (1-2 VUs)"] --> Load["2. Load Test (Expected peak)"]
+    Load --> Stress["3. Stress Test (Saturation cliff)"]
+    Load --> Spike["4. Spike Test (Instantaneous shock)"]
 ```
 
 | Test Type | Objective | Duration | Target Load | Key Question |
 |---|---|---|---|---|
-| **Smoke** | Sanity check | 1-2 min | Minimal (1-5 VUs) | *Did the deployment break basic endpoints?* |
-| **Load** | Validate SLA compliance | 10-30 min | Expected Peak | *Can the system meet p99 latency targets at peak traffic?* |
-| **Stress** | Discover breaking point | 15-45 min | Beyond Peak (1.5x - 3x) | *Where is the saturation cliff and how does it degrade?* |
-| **Spike** | Measure recovery after shock | 5-10 min | $0 \to 10\times \to 0$ | *Do queues clear, or does it trigger death spirals?* |
-| **Soak** | Expose leaks and drift | 4-24 hours | 70% Max Capacity | *Do memory leaks, connection leaks, or disk growth appear?* |
+| **Smoke** | Sanity check | 30s | Minimal (2 VUs) | *Did the deployment break basic endpoints?* |
+| **Load** | Validate SLO compliance | 1-2 min | Expected Peak (20 VUs) | *Can the system meet p95 latency targets under steady traffic?* |
+| **Stress** | Discover breaking point | 3 min | Beyond Peak (50-300 VUs) | *Where is the saturation cliff and how does latency degrade?* |
+| **Spike** | Measure recovery after shock | 1 min | $5 \to 200 \to 5$ VUs | *Do queues clear, or does it trigger death spirals?* |
 
 ---
 
@@ -45,27 +38,15 @@ An automated report showing "Average: 210ms" appears healthy. However, **$2\%$ o
 - $p95 = 10\text{ms}$
 - $p99 = 10,000\text{ms}$
 
-Percentiles ($p95, p99, p99.9$) immediately expose tail latency cliffs.
+Percentiles ($p95, p99$) immediately expose tail latency cliffs.
 
 ---
 
-## Closed-Loop Workflow: Testing + Metrics + Profiling
+## Executable Test Suite
 
-```mermaid
-flowchart TD
-    k6["k6 (Injects controlled concurrency)"] -->|Requests| App["Application under test"]
-    App -->|Pulls Metrics| Prom["Prometheus (Tracks p99 & saturation)"]
-    Prom --> Grafana["Grafana (Visualizes latency vs throughput cliff)"]
-    App -->|Samples Call Stacks| pprof["pprof (Exposes hot code paths)"]
-```
-
----
-
-## Directory Index
-
-- [`smoke-testing/`](file:///performance-testing/smoke-testing/README.md) – Sanity verification scripts.
-- [`load-testing/`](file:///performance-testing/load-testing/README.md) – Expected peak verification scripts.
-- [`stress-testing/`](file:///performance-testing/stress-testing/README.md) – Ramping to failure boundary.
-- [`spike-testing/`](file:///performance-testing/spike-testing/README.md) – Instantaneous traffic burst scripts.
-- [`soak-testing/`](file:///performance-testing/soak-testing/README.md) – Extended endurance testing.
-- [`k6/`](file:///performance-testing/k6/README.md) – Reusable k6 test scripts with Prometheus thresholds.
+All executable scripts and configurations reside in:
+- [k6 Testing Suite](k6/README.md)
+  - [smoke.js](k6/smoke.js)
+  - [load.js](k6/load.js)
+  - [stress.js](k6/stress.js)
+  - [spike.js](k6/spike.js)

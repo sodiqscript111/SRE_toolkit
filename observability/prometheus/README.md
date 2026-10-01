@@ -106,7 +106,7 @@ predict_linear(node_filesystem_free_bytes[1h], 4 * 3600) < 0
 
 Prometheus rules evaluate PromQL expressions at regular intervals (`evaluation_interval`). If an expression evaluates to true for longer than `for`, the alert transitions from `Pending` to `Firing`.
 
-Example from [`alerts.yml`](file:///observability/prometheus/alerts.yml):
+Example from [alerts.yml](alerts.yml):
 ```yaml
 groups:
   - name: reliability_alerts

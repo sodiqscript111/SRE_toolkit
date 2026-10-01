@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chaos-target
+  namespace: chaos-lab
+  labels:
+    app: chaos-target
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: chaos-target
+  template:
+    metadata:
+      labels:
+        app: chaos-target
+    spec:
+      containers:
+        - name: app
+          image: hashicorp/http-echo:0.2.3
+          args:
+            - "-text=chaos-target-alive"
+            - "-listen=:8080"
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chaos-lab
+  labels:
+    environment: local-lab
+    chaos-mesh.org/inject: "enabled"

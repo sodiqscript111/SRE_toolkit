@@ -1,136 +1,67 @@
 # Reliability Lab Roadmap
 
-This roadmap tracks the development of knowledge modules, tooling guides, and reproducible failure experiments in `reliability-lab`.
+This roadmap tracks the development of knowledge modules, tooling guides, and reproducible failure experiments in `SRE_toolkit`.
 
-Statuses:
-- ✅ **Complete**: Fully documented with runnable lab code, manifests, and reproduction scripts.
-- 🚧 **In progress**: Architectural docs written; reference implementation or experiment harness being tested.
-- 🧪 **Experiment planned**: Hypothesis and test topology designed; harness pending.
-- 📚 **To learn**: Theoretical foundations being mapped; deeper production validation needed.
-
----
-
-## 1. Observability Stack
-
-| Topic | Status | Description |
-|---|---|---|
-| Prometheus Fundamentals & PromQL | ✅ Complete | Metric types, scraping, counters, gauges, histograms, rate/increase/histogram_quantile. |
-| Grafana Dashboards | ✅ Complete | Provisioned datasources, Golden Signals dashboard, panel configurations. |
-| Structured Logging & Correlation IDs | 🚧 In progress | Context propagation with trace/request correlation across services. |
-| Distributed Tracing (OpenTelemetry) | 📚 To learn | Context propagation over W3C Trace Context, span taxonomy, trace sampling trade-offs. |
-| Continuous Profiling (Pyroscope / Parca) | 📚 To learn | Always-on profiling in production, overhead considerations, differential analysis. |
+Status Definitions:
+- ✅ **Complete**: Working code and configuration exist, the example is locally runnable, commands are documented, and the implementation has been verified.
+- 🚧 **In progress**: Reference implementation or harness is currently being scaffolded or validated.
+- 🧪 **Planned**: Target topology and hypothesis designed; implementation scheduled for future release.
+- 📚 **Notes only**: Theoretical explanation and architecture notes exist; no executable code yet.
 
 ---
 
-## 2. Profiling & Performance Diagnostics
+## v0.1 Implemented & Verified Modules
 
-| Topic | Status | Description |
-|---|---|---|
-| On-CPU Profiling (Go pprof) | ✅ Complete | Sampling CPU profiles, identifying algorithmic bottlenecks, flat vs cum metrics. |
-| Flame Graphs & Stack Visualization | ✅ Complete | Reading frames, frame width interpretation, identifying hot paths and false leads. |
-| Wall-Clock & Async-Aware Profiling | ✅ Complete | CPU time vs elapsed time in async runtimes (Node.js/Python/Go I/O wait). |
-| Memory Profiling & Allocations | 🚧 In progress | Heap in-use vs alloc_space, escape analysis, garbage collection pressure. |
-| Mutex & Goroutine Blocking Contention | 🚧 In progress | Lock hold times, scheduling latency, goroutine leaks under backpressure. |
-
----
-
-## 3. Performance & Load Testing
-
-| Topic | Status | Description |
-|---|---|---|
-| k6 Testing Suite | ✅ Complete | Smoke, load, stress, spike, and soak test scripts with percentile thresholds. |
-| Metric Interpretation | ✅ Complete | Why averages hide tail latency; p50 vs p95 vs p99; saturation vs throughput. |
-| Load Testing + Profiling Closed Loop | ✅ Complete | Unified workflow linking k6 injection -> Prometheus scraping -> pprof capture. |
+| Module | Status | Description | Location |
+|---|---|---|---|
+| **Prometheus Telemetry** | ✅ Complete | Metric types (Counter, Gauge, Histogram), scrape configs, and alerting rules. | [observability/prometheus/](observability/prometheus/README.md) |
+| **Grafana Dashboards** | ✅ Complete | Auto-provisioned datasources and Golden Signals dashboard (`reliability-overview.json`). | [observability/grafana/](observability/grafana/README.md) |
+| **Observability Demo Service** | ✅ Complete | Go HTTP service exposing `/health`, `/work`, and `/metrics` with configurable latency/error injection. | [observability/demo-app/](observability/demo-app/main.go) |
+| **k6 Testing Suite** | ✅ Complete | Executable smoke, load, stress, and spike test scripts targeting the demo service. | [performance-testing/k6/](performance-testing/k6/README.md) |
+| **On-CPU Profiling (Go pprof)** | ✅ Complete | Target app with `/fast` and `/slow` CPU-bound routes; load script, CLI and Web UI pprof workflows. | [profiling/cpu/](profiling/cpu/README.md) |
+| **Flame Graphs** | ✅ Complete | Practical diagnostic guide building on CPU lab: sampling, reading frames, optimizing code, and differential flame graphs. | [profiling/flamegraphs/](profiling/flamegraphs/README.md) |
+| **Async-Aware Profiling** | ✅ Complete | TypeScript/Node.js service illustrating CPU-bound event loop blocking vs async I/O waiting. | [profiling/async-aware/](profiling/async-aware/README.md) |
+| **Chaos Mesh on Kubernetes** | ✅ Complete | Disposable `kind` lab with target deployment, `PodChaos`, and `NetworkChaos` manifests. | [chaos-engineering/chaos-mesh/](chaos-engineering/chaos-mesh/README.md) |
+| **Reliability Concepts & Glossary** | 📚 Notes only | Reference documentation covering failure dynamics, mathematical definitions, and learning sequence. | [docs/](docs/reliability-engineering.md) |
 
 ---
 
-## 4. Failure Handling & Resilience Patterns
+## Future Modules (Planned Work)
 
-| Topic | Status | Description |
-|---|---|---|
-| Retries & Amplification | ✅ Complete | How multi-tier retries cause exponential traffic amplification and cascaded collapse. |
-| Retry Ownership Pattern | ✅ Complete | Designing single-layer retry ownership across an Envoy + Go microservice chain. |
-| Backoff & Jitter | ✅ Complete | Constant vs exponential backoff; Full Jitter vs Decorrelated Jitter against herds. |
-| Circuit Breakers | ✅ Complete | State machine (Closed, Open, Half-Open), failure thresholds, cool-down timers. |
-| Idempotency Patterns | 🚧 In progress | Idempotency keys, atomic deduplication, at-least-once delivery safety. |
-| Dead-Letter Queues (DLQ) | 🚧 In progress | Poison-pill isolation, retry headers, message replay mechanisms. |
-| Graceful Degradation | 🚧 In progress | Fallbacks, shed non-critical features, static cache fallbacks. |
+These topics are planned for future versions. Directories will only be created when runnable experiments are implemented:
 
----
+### Resilience & Failure Handling
+- 🧪 **Retries & Retry Amplification**: Multi-tier retry storm demonstrations and mathematical analysis.
+- 🧪 **Retry Ownership Pattern**: Single-tier retry assignment across service chains.
+- 🧪 **Timeouts, Exponential Backoff & Jitter**: Full jitter vs decorrelated jitter against synchronized thundering herds.
+- 🧪 **Circuit Breakers**: State machine transitions (`Closed` $\to$ `Open` $\to$ `Half-Open`) under error bursts.
+- 🧪 **Idempotency Keys**: Safe retry mechanisms with atomic request deduplication.
+- 🧪 **Dead-Letter Queues (DLQ)**: Poison pill handling and retry queues.
+- 🧪 **Graceful Degradation**: Fallback caches and non-critical feature shedding.
 
-## 5. Failure Isolation & Blast Radius
+### Failure Isolation & Blast Radius
+- 🧪 **Bulkheads**: Thread pool and socket pool resource partitioning.
+- 🧪 **Shuffle Sharding**: Combinatorial tenant routing to reduce outage blast radius from 100% to < 5%.
+- 🧪 **Tenant Isolation**: Noisy-neighbor mitigations and per-tier concurrency limits.
 
-| Topic | Status | Description |
-|---|---|---|
-| Blast Radius & Bulkheads | 🚧 In progress | Thread pool / connection pool segregation, failure domain containment. |
-| Shuffle Sharding Simulation | ✅ Complete | Mathematical simulation and routing demonstration of blast radius reduction. |
-| Tenant Isolation | 🚧 In progress | Multi-tenant noisy-neighbor isolation, rate-limiting per customer tier. |
+### Kubernetes Reliability
+- 🧪 **Probes**: In-depth analysis of startup vs liveness vs readiness probes and cascading restart hazards.
+- 🧪 **Resource Requests & Limits**: Linux CFS CPU throttling vs cgroup `OOMKilled` (Exit code 137).
+- 🧪 **PodDisruptionBudgets (PDB)**: Protecting capacity during voluntary node draining.
+- 🧪 **Graceful Termination**: Handling SIGTERM, in-flight request draining, and endpoint propagation races.
+- 🧪 **Autoscaling & KEDA**: Scaling on queue backlog and worker lag instead of raw CPU.
 
----
+### Networking & Service Mesh
+- 🧪 **CoreDNS Reliability**: `ndots:5` search path amplification and DNS caching strategies.
+- 🧪 **Envoy Traffic Management**: Outlier detection, active health checks, and bounded retries.
+- 🧪 **Service Mesh & eBPF**: Sidecar vs Cilium ambient data planes and operational trade-offs.
 
-## 6. Kubernetes Reliability
+### High Availability & Storage
+- 🧪 **Replication & Lag**: Synchronous vs asynchronous replication trade-offs and split-brain risks.
+- 🧪 **Leader Election & Leases**: Distributed consensus, lease expiration, and fencing tokens.
+- 🧪 **PostgreSQL HA**: Patroni and etcd-backed leader failover measuring write downtime (RTO/RPO).
 
-| Topic | Status | Description |
-|---|---|---|
-| Health Probes | ✅ Complete | Startup vs Liveness vs Readiness; deadlocks, cascading restarts, route removal. |
-| Resource Requests & Limits | ✅ Complete | CPU throttling (CFS quota) vs Memory OOMKill (cgroup kill, code 137). |
-| PodDisruptionBudgets (PDB) | 🚧 In progress | Protecting quorum and minimum capacity during voluntary node draining. |
-| Graceful Termination | 🚧 In progress | SIGTERM propagation, endpoint deregistration race condition, connection draining. |
-| Topology Spread & Scheduling | 🚧 In progress | Zone anti-affinity, spread constraints across failure domains. |
-| Node Eviction & Failure | 🧪 Experiment planned | Behavior of StatefulSets and Deployments during abrupt worker node loss. |
-
----
-
-## 7. Chaos Engineering
-
-| Topic | Status | Description |
-|---|---|---|
-| Chaos Engineering Methodology | ✅ Complete | Hypothesis formulation, steady-state definition, blast radius control. |
-| Chaos Mesh Pod Disruption | ✅ Complete | PodKill and PodFailure experiments on Kubernetes under steady load. |
-| Chaos Mesh Network Latency & Loss | ✅ Complete | Injecting millisecond delays and packet drop rates to trigger tail latency cliffs. |
-| Chaos Monkey / VM Level Chaos | 🚧 In progress | Instance-level randomized termination patterns in cloud infrastructure. |
-| StressChaos (CPU/Memory) | 🧪 Experiment planned | Kernel memory pressure, page thrashing, noisy neighbor chaos. |
-| Advanced Chaos (IOChaos, DNSChaos) | 📚 To learn | Corrupting disk block writes, dropping DNS UDP packets to observe retries. |
-
----
-
-## 8. Networking Reliability
-
-| Topic | Status | Description |
-|---|---|---|
-| DNS & CoreDNS Reliability | 🚧 In progress | ndots:5 query explosion, UDP packet drops, DNS caching strategies. |
-| L4 vs L7 Load Balancing | 🚧 In progress | TCP connection reuse, HTTP/2 connection coalescing, least-request routing. |
-| Envoy Traffic Management | ✅ Complete | Envoy configuration for bounded timeouts, retries, and outlier detection. |
-| Service Mesh Architecture | 🚧 In progress | Sidecar vs Ambient/eBPF data plane trade-offs and operational overhead. |
-| Network Partitions & Asymmetric Loss | 🧪 Experiment planned | Split-brain simulation, unidirectional packet drops. |
-
----
-
-## 9. High Availability & Data Systems
-
-| Topic | Status | Description |
-|---|---|---|
-| Replication & Consistency | 🚧 In progress | Synchronous vs asynchronous replication, replication lag, split-brain risks. |
-| Leader Election & Leases | 🚧 In progress | Consensus leases, heartbeat timeouts, fencing tokens. |
-| PostgreSQL HA with Patroni | 📚 To learn | DCS-backed failover (etcd/Consul), measuring RTO/RPO during primary kill. |
-
----
-
-## 10. Autoscaling & Capacity Planning
-
-| Topic | Status | Description |
-|---|---|---|
-| CPU/Memory HPA | 🚧 In progress | Scaling limitations when CPU does not correlate with business workload. |
-| Queue-Based Scaling (KEDA) | 🚧 In progress | Scaling on backlog depth, processing lag, consumer saturation. |
-| Capacity Modeling (Little's Law) | 🚧 In progress | $L = \lambda W$, concurrency limits, queueing theory under saturation. |
-
----
-
-## 11. SRE Fundamentals & SLO Engineering
-
-| Topic | Status | Description |
-|---|---|---|
-| Four Golden Signals | ✅ Complete | Latency, Traffic, Errors, Saturation definitions and telemetry mappings. |
-| SLI / SLO / SLA Taxonomy | ✅ Complete | Distinguishing measurement, target, and legal consequence. |
-| Error Budget & Multi-Window Burn Rates | 📚 To learn | Mathematical burn-rate calculation ($14.4\times$, $6\times$, $1\times$) and pager alerting. |
-| Reliability Metrics Critique | ✅ Complete | Analysis of MTTR, MTTF, MTBF fallacies and valid recovery metrics. |
+### SRE Fundamentals & Advanced Observability
+- 🧪 **SLIs, SLOs & Error Budgets**: Mathematical calculation of availability targets and multi-window multi-burn-rate alerting.
+- 🧪 **Distributed Tracing (OpenTelemetry)**: W3C Trace Context propagation and span hierarchies.
+- 🧪 **Continuous Profiling**: Always-on profiling in production using Grafana Pyroscope or Parca.

@@ -1,84 +1,60 @@
 # Reliability Engineering Learning Path
 
-This guide maps out a systematic path to master production reliability from first principles. While you are free to explore individual modules as needed, following this progression connects telemetry, diagnostics, and defensive architectural patterns in logical sequence.
+This guide maps out a systematic path to master production reliability from first principles.
 
 ---
 
-## Progression Overview
+## Part 1: Implemented & Runnable Labs (v0.1)
+
+Follow these runnable labs locally using Docker Compose, Go, Node.js, and kind.
 
 ```mermaid
 flowchart TD
-    M1["1. Observability Fundamentals"] --> M2["2. Metrics & Prometheus"]
-    M2 --> M3["3. Grafana Visualization"]
-    M3 --> M4["4. Performance & Load Testing"]
-    M4 --> M5["5. Profiling & Diagnostics"]
-    M5 --> M6["6. Flame Graph Analysis"]
-    M6 --> M7["7. Failure Handling & Retries"]
-    M7 --> M8["8. Chaos Engineering"]
-    M8 --> M9["9. Failure Isolation & Blast Radius"]
-    M9 --> M10["10. Kubernetes Reliability"]
-    M10 --> M11["11. High Availability & Data Systems"]
-    M11 --> M12["12. SLOs & Error Budgets"]
+    M1["1. Observability Stack (Prometheus & Grafana)"] --> M2["2. Performance Testing (k6 Suite)"]
+    M2 --> M3["3. On-CPU Profiling (Go pprof)"]
+    M3 --> M4["4. Flame Graph Diagnostics"]
+    M4 --> M5["5. Async-Aware Profiling (Node.js/TypeScript)"]
+    M5 --> M6["6. Chaos Engineering (Chaos Mesh on kind)"]
 ```
+
+### Module 1: Observability Stack (Prometheus + Grafana)
+- **Concepts**: Metric types (Counter, Gauge, Histogram), scraping intervals, PromQL queries (`rate`, `histogram_quantile`), provisioned dashboards.
+- **Directory**: [observability/](../observability/README.md)
+- **Hands-On**: Start the stack with `docker compose up -d`, observe the demo application metrics, and inspect the provisioned Grafana dashboard.
+
+### Module 2: Performance & Load Testing with k6
+- **Concepts**: Smoke testing, load testing, stress testing, and spike testing. Tail percentiles ($p95$, $p99$) vs misleading arithmetic averages.
+- **Directory**: [performance-testing/k6/](../performance-testing/k6/README.md)
+- **Hands-On**: Run `smoke.js`, `load.js`, and `stress.js` against the observability demo app while watching real-time latency divergence in Grafana.
+
+### Module 3: On-CPU Profiling with Go `pprof`
+- **Concepts**: Statistical stack sampling, identifying CPU hotspots, understanding `flat` vs `cum` execution times.
+- **Directory**: [profiling/cpu/](../profiling/cpu/README.md)
+- **Hands-On**: Run the CPU target app, inject traffic via `load.js`, collect a 20-second profile, and inspect `expensiveComputation()` using `go tool pprof`.
+
+### Module 4: Flame Graph Analysis
+- **Concepts**: Call stack hierarchy, frame width representing sampled time, identifying plateaus, and comparing differential flame graphs.
+- **Directory**: [profiling/flamegraphs/](../profiling/flamegraphs/README.md)
+- **Hands-On**: Open `http://localhost:8081/ui/flamegraph` on the CPU target app, optimize the sorting routine, and verify that the bottleneck frame collapses.
+
+### Module 5: Async-Aware Profiling
+- **Concepts**: The distinction between CPU time and wall-clock elapsed time in asynchronous runtimes. Single-threaded event loop starvation.
+- **Directory**: [profiling/async-aware/](../profiling/async-aware/README.md)
+- **Hands-On**: Compare synchronous CPU-bound blocks (`/cpu`) against asynchronous I/O waiting (`/io`) in a TypeScript service.
+
+### Module 6: Chaos Engineering on Kubernetes
+- **Concepts**: Controlled hypothesis-driven fault injection. Steady-state verification. Pod termination and network latency injection.
+- **Directory**: [chaos-engineering/chaos-mesh/](../chaos-engineering/chaos-mesh/README.md)
+- **Hands-On**: Spin up a local `kind` cluster, install Chaos Mesh, deploy the 3-replica echo application, and apply `PodChaos` and `NetworkChaos`.
 
 ---
 
-## Module 1: Observability Fundamentals
-- **Core Concept**: Distinguish the four pillars of telemetry: Metrics (*What is happening?*), Logs (*What happened?*), Traces (*Where was time spent?*), and Profiles (*What code is executing?*).
-- **Directory**: [`observability/`](file:///observability/README.md)
-- **Checkpoint**: Explain why adding more debug logs often worsens performance during high-throughput outages.
+## Part 2: Planned Architectural Progression (Future)
 
-## Module 2: Metrics & Prometheus
-- **Core Concept**: Time-series storage, scrapers, pull architecture, metric types (Counter, Gauge, Histogram, Summary). PromQL rate calculations, histogram quantile calculations ($p95$, $p99$), and metric cardinality dangers.
-- **Directory**: [`observability/prometheus/`](file:///observability/prometheus/README.md)
-- **Lab**: Inspect metrics on `http://localhost:8080/metrics` and run Prometheus queries in `observability/prometheus/`.
+These topics represent subsequent modules planned for development in [ROADMAP.md](../ROADMAP.md):
 
-## Module 3: Grafana Visualization
-- **Core Concept**: Building dashboards around the **Four Golden Signals** (Latency, Traffic, Errors, Saturation). Panel queries, variables, and alerts.
-- **Directory**: [`observability/grafana/`](file:///observability/grafana/README.md)
-- **Lab**: Import the sample dashboard from `observability/grafana/dashboards/reliability-overview.json`.
-
-## Module 4: Performance & Load Testing
-- **Core Concept**: Smoke tests, stress tests, spike tests, and soak tests. Understanding why arithmetic averages hide tail latency. Correlating request rate with saturation cliffs.
-- **Directory**: [`performance-testing/`](file:///performance-testing/README.md)
-- **Lab**: Run [`performance-testing/k6/load-test.js`](file:///performance-testing/k6/load-test.js) against the sample application.
-
-## Module 5: Profiling & Runtime Diagnostics
-- **Core Concept**: On-CPU profiling vs wall-clock profiling. Why an asynchronous system (Node.js/Python/Go) can be slow even when CPU utilization is $< 10\%$.
-- **Directory**: [`profiling/`](file:///profiling/README.md)
-- **Lab**: Run Go `pprof` CPU sample analysis in [`profiling/cpu/`](file:///profiling/cpu/README.md) and async diagnostics in [`profiling/async-aware/`](file:///profiling/async-aware/README.md).
-
-## Module 6: Flame Graph Analysis
-- **Core Concept**: Stack sampling, understanding that frame width represents time/samples while height represents call depth. Identifying hot paths and false leads.
-- **Directory**: [`profiling/flamegraphs/`](file:///profiling/flamegraphs/README.md)
-- **Experiment**: Run [`experiments/cpu-bottleneck/`](file:///experiments/cpu-bottleneck/README.md) to generate, optimize, and compare flame graphs.
-
-## Module 7: Failure Handling Patterns
-- **Core Concept**: Bounded timeouts, exponential backoff, randomized jitter, circuit breaker state transitions (Closed $\to$ Open $\to$ Half-Open), and idempotency keys.
-- **Directory**: [`failure-handling/`](file:///failure-handling/README.md)
-- **Flagship Experiment**: Run [`experiments/retry-ownership/`](file:///experiments/retry-ownership/README.md) to witness retry storms and retry amplification across a 4-tier microservice chain.
-
-## Module 8: Chaos Engineering
-- **Core Concept**: Controlled fault injection. Hypothesis-driven testing. Injecting Pod kills, packet loss, and millisecond latency delays using Chaos Mesh on Kubernetes.
-- **Directory**: [`chaos-engineering/`](file:///chaos-engineering/README.md)
-- **Labs**: Run [`experiments/pod-failure/`](file:///experiments/pod-failure/README.md) and [`experiments/network-latency/`](file:///experiments/network-latency/README.md).
-
-## Module 9: Failure Isolation & Blast Radius
-- **Core Concept**: Bulkheads, failure domains, tenant isolation, and Shuffle Sharding.
-- **Directory**: [`failure-isolation/`](file:///failure-isolation/README.md)
-- **Simulation**: Run [`experiments/shuffle-sharding/`](file:///experiments/shuffle-sharding/README.md) to see how small deterministic subsets reduce customer blast radius from $100\%$ to $< 5\%$.
-
-## Module 10: Kubernetes Reliability
-- **Core Concept**: Startup, Readiness, and Liveness probes. CPU CFS throttling vs Memory OOMKills. PodDisruptionBudgets and graceful termination (SIGTERM draining).
-- **Directory**: [`kubernetes-reliability/`](file:///kubernetes-reliability/README.md)
-- **Labs**: Review probes in [`kubernetes-reliability/probes/`](file:///kubernetes-reliability/probes/README.md) and resource quotas in [`kubernetes-reliability/resource-requests-limits/`](file:///kubernetes-reliability/resource-requests-limits/README.md).
-
-## Module 11: High Availability & Data Systems
-- **Core Concept**: Replication lag, consensus, leader election, fencing, split-brain hazards, RTO, and RPO.
-- **Directory**: [`high-availability/`](file:///high-availability/README.md)
-- **Lab**: Inspect PostgreSQL HA architecture and failover timeline in [`high-availability/postgres/`](file:///high-availability/postgres/README.md).
-
-## Module 12: SRE Fundamentals, SLOs & Error Budgets
-- **Core Concept**: Math of Service Level Objectives (SLOs), calculating error budgets, and configuring multi-window multi-burn-rate alerting.
-- **Directory**: [`sre-fundamentals/`](file:///sre-fundamentals/README.md)
-- **Guide**: Work through [`sre-fundamentals/burn-rate/`](file:///sre-fundamentals/burn-rate/README.md).
+- **Failure Handling**: Timeouts, exponential backoff, randomized jitter, circuit breakers, idempotency keys, dead-letter queues.
+- **Failure Isolation**: Bulkheads, tenant quotas, shuffle sharding simulations.
+- **Kubernetes Reliability**: Startup/liveness/readiness probes, CPU throttling (CFS quota) vs OOMKills, PodDisruptionBudgets, graceful termination.
+- **High Availability**: Replication lag, consensus leader election, automated failover, split-brain fencing.
+- **SRE Fundamentals**: Four Golden Signals, SLIs, SLOs, SLAs, error budgets, and multi-window multi-burn-rate alerting.

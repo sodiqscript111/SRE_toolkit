@@ -64,6 +64,6 @@ Measures how close resources are to full utilization before queueing begins.
 ## Provisioning Dashboards as Code
 
 Avoid manually building dashboards in the UI. Store dashboard JSON definitions and datasource definitions in git repository directories mounted directly into Grafana:
-- `provisioning/datasources/datasources.yml`
-- `provisioning/dashboards/dashboards.yml`
-- `dashboards/reliability-overview.json`
+- [datasources.yml](provisioning/datasources/datasources.yml)
+- [dashboards.yml](provisioning/dashboards/dashboards.yml)
+- [reliability-overview.json](dashboards/reliability-overview.json)

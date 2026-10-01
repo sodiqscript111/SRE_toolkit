@@ -1,68 +1,79 @@
-# On-CPU Profiling with Go `pprof`
+# Go CPU Profiling with `pprof`
 
-On-CPU profiling samples the call stack of active OS threads at a fixed frequency (default: 100 Hz, or every 10ms) to determine where execution time is spent.
-
----
-
-## The Question Answered
-
-> **What code is consuming CPU time right now?**
+This lab demonstrates how to use Go's built-in `net/http/pprof` sampler to locate and diagnose CPU bottlenecks under load.
 
 ---
 
-## Enabling `pprof` in Go
+## Lab Architecture
 
-Import `net/http/pprof` for automatic HTTP handler registration:
+The target application ([app/main.go](app/main.go)) exposes two HTTP endpoints:
+- `/fast`: Performs an $O(1)$ fast in-memory response.
+- `/slow`: Invokes `expensiveComputation()`, which performs a deliberate quadratic $O(n^2)$ bubble sort on 2,500 integers.
+- `/debug/pprof/`: Built-in Go diagnostic sampling endpoints.
 
-```go
-package main
+---
 
-import (
-	"fmt"
-	"net/http"
-	_ "net/http/pprof" // registers /debug/pprof handlers on DefaultServeMux
-)
+## Step-by-Step Lab Workflow
 
-func cpuHeavyWorkload(w http.ResponseWriter, r *http.Request) {
-	// Inefficient computation simulating quadratic regex or nested hashing
-	var total uint64
-	for i := 0; i < 50_000_000; i++ {
-		total += uint64(i ^ (i >> 3))
-	}
-	fmt.Fprintf(w, "Result: %d\n", total)
-}
-
-func main() {
-	http.HandleFunc("/workload", cpuHeavyWorkload)
-	http.ListenAndServe(":8080", nil)
-}
+```mermaid
+flowchart LR
+    A["1. Start Target App (:8085)"] --> B["2. Run k6 Load (:8085/slow)"]
+    B --> C["3. Collect 20s CPU Profile via pprof"]
+    C --> D["4. Inspect Top Nodes (flat vs cum)"]
+    D --> E["5. Pinpoint expensiveComputation()"]
 ```
 
----
-
-## Capturing and Inspecting Profiles
-
-### 1. Capture a 30-Second CPU Profile
+### Step 1: Start the Target Application
+In terminal 1:
 ```bash
-go tool pprof http://localhost:8080/debug/pprof/profile?seconds=30
+cd profiling/cpu
+go run app/main.go
+```
+The server will listen on `http://localhost:8085`.
+
+### Step 2: Generate Traffic with k6
+In terminal 2, start generating load:
+```bash
+cd profiling/cpu
+k6 run load.js
+```
+`load.js` directs 80% of requests to `/slow` to keep CPU execution active during profiling.
+
+### Step 3: Capture and Inspect Profile (CLI)
+While k6 is running, capture a 20-second CPU profile in terminal 3:
+```bash
+go tool pprof http://localhost:8085/debug/pprof/profile?seconds=20
 ```
 
-### 2. Interactive Analysis in pprof CLI
+Inside the interactive `pprof` CLI, run:
 ```text
 (pprof) top 10
-Showing nodes accounting for 4.82s, 95.82% of 5.03s total
-      flat  flat%   sum%        cum   cum%
-     4.50s 89.46% 89.46%      4.50s 89.46%  main.cpuHeavyWorkload
-     0.20s  3.98% 93.44%      0.20s  3.98%  runtime.kevent
-     0.12s  2.39% 95.82%      4.62s 91.85%  net/http.(*conn).serve
 ```
 
-### Understanding `flat` vs `cum`
-- **`flat`**: Time spent strictly within this specific function's instructions (excluding downstream functions it calls). High flat time indicates a hot loop or heavy internal computation.
-- **`cum` (cumulative)**: Total time spent in this function **plus all downstream functions it called**. High cumulative time with low flat time means this function is an orchestrator calling a slow helper.
+#### Understanding `flat` vs `cum`
+- **`flat`**: Time spent strictly inside that function's instructions (excluding downstream functions it calls). `expensiveComputation` will show high flat time because of the nested sorting loop.
+- **`cum` (cumulative)**: Total time spent in that function **plus all callees**. `slowHandler` will show high cumulative time because it calls `expensiveComputation`.
 
-### 3. Launch Web UI with Visual Graphs
+To view line-by-line source annotations:
+```text
+(pprof) list expensiveComputation
+```
+`pprof` will print the exact source lines of `expensiveComputation` with cycle counts beside the nested `for` loop.
+
+### Step 4: Visual Analysis & Flame Graph (Web UI)
+To inspect the profile visually in your browser:
 ```bash
-go tool pprof -http=:8081 profile.pb.gz
+go tool pprof -http=:8081 http://localhost:8085/debug/pprof/profile?seconds=20
 ```
-Navigates to `http://localhost:8081` to view interactive call trees and flame graphs.
+Open `http://localhost:8081` in your browser. From the top navigation menu, select:
+- **Top**: Tabular flat vs cum view.
+- **Graph**: Directed call graph with edge weights.
+- **Flame Graph**: Interactive flame graph highlighting hot call stacks.
+
+---
+
+## Cleanup
+Stop the Go process with `Ctrl+C`. Clean up any saved profile files:
+```bash
+make clean
+```

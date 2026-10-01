@@ -1,62 +1,81 @@
-# Async-Aware Profiling: Node.js & Python
+# Async-Aware Profiling: CPU Time vs Elapsed Time
 
-In single-threaded asynchronous runtimes (Node.js event loop, Python `asyncio`), traditional thread-based profilers fail because all asynchronous tasks share the same underlying OS thread or event loop.
+In asynchronous runtimes (Node.js/TypeScript, Python `asyncio`), traditional thread-based and on-CPU profilers can be misleading.
+
+A service can experience seconds of tail latency while CPU utilization remains below 5%. Conversely, a single synchronous CPU-heavy block will freeze the entire event loop for all concurrent requests.
 
 ---
 
-## The Async Problem
+## Core Principle
 
-In synchronous multithreaded systems, each slow request blocks its dedicated thread. In an asynchronous event loop:
-- One CPU-intensive synchronous task blocks **all** concurrent requests on that event loop.
-- Conversely, an application handling 10,000 concurrent requests waiting on database responses may report 2% CPU usage while request latencies skyrocket to 10 seconds due to task queue backlog delays.
+$$\text{CPU Time} \ne \text{Elapsed (Wall-Clock) Time}$$
 
-```mermaid
-flowchart TD
-    subgraph Single Event Loop
-        A["Task 1: Read HTTP Request"] --> B["Task 2: Synchronous JSON.parse (50ms - BLOCKS LOOP)"]
-        B --> C["Task 3: Ready DB Callback (Delayed 50ms)"]
-        B --> D["Task 4: Ready Timer (Delayed 50ms)"]
-    end
+- **On-CPU Time**: The number of clock cycles CPU cores spent executing instructions in user space or kernel space.
+- **Elapsed Wall-Clock Time**: The real-world duration experienced by the client from sending the request to receiving the response.
+
+---
+
+## Lab Architecture
+
+This TypeScript service ([src/server.ts](src/server.ts)) provides two contrasting endpoints:
+
+| Endpoint | Behavior | CPU Consumption | Elapsed Time | Concurrency Impact |
+|---|---|---|---|---|
+| `/cpu` | Tight synchronous calculation loop (150ms) | **100% on 1 core** | 150ms | **Blocks event loop**; queues all other requests |
+| `/io` | Asynchronous timer wait (150ms) | **~0%** | 150ms | **Yields event loop**; handles thousands concurrently |
+
+---
+
+## Running the Lab
+
+### 1. Build and Start the Server
+```bash
+cd profiling/async-aware
+npm install
+npm run build
+npm start
 ```
+The server listens on `http://localhost:8086`.
 
----
-
-## Example: Event Loop Delay in Node.js
-
-```typescript
-import http from 'http';
-
-const server = http.createServer((req, res) => {
-  if (req.url === '/block') {
-    // Synchronous regex or CPU loop that blocks the entire Node.js event loop
-    const start = Date.now();
-    while (Date.now() - start < 2000) {
-      // 2 seconds CPU spin
-    }
-    res.end('Blocked complete');
-  } else if (req.url === '/fast') {
-    // Fast lightweight endpoint
-    res.end('Fast response');
-  }
-});
-
-server.listen(3000);
+### 2. Test the Asynchronous I/O Endpoint
+In another terminal, send concurrent requests to `/io`:
+```bash
+curl http://localhost:8086/io
 ```
+Response:
+```json
+{
+  "workload": "async_io_wait",
+  "elapsed_ms": 152,
+  "cpu_burned": false
+}
+```
+**Observation**: The request took 152ms of elapsed time. However, checking CPU usage with `top` or Task Manager shows CPU utilization is near 0%. The thread was idle waiting on the timer callback.
 
-### Observation:
-When `/block` is called:
-- Even though `/fast` requires 0.1ms of work, any incoming `/fast` requests are queued behind the synchronous block and take $> 2000\text{ms}$.
-- Standard metrics show CPU spiked to 100% on one core.
+### 3. Test the CPU-Bound Synchronous Endpoint
+Send a request to `/cpu`:
+```bash
+curl http://localhost:8086/cpu
+```
+Response:
+```json
+{
+  "workload": "cpu_bound",
+  "elapsed_ms": 150,
+  "cpu_burned": true,
+  "iterations": 1450210
+}
+```
+**Observation**: The CPU core was 100% pegged during this 150ms window. If 10 clients hit `/cpu` at the same time, the 10th request will take $1.5\text{s}$ because each request synchronously blocks the event loop.
 
 ---
 
-## Diagnostic Tools for Async Runtimes
+## Why Async-Aware Profiling Matters Across Runtimes
 
-1. **Event Loop Lag Monitoring**:
-   - Node.js: `perf_hooks.monitorEventLoopDelay({ resolution: 20 })`
-   - Exposes `min`, `max`, `p99` event loop delay. When event loop delay $> 50\text{ms}$, the server is experiencing event loop starvation.
-2. **Clinic.js (Doctor / Bubbleprof)**:
-   - Tracks promise chains, async hooks, and identifies whether bottlenecks are I/O latency or event loop blocking.
-3. **Python `asyncio` Debug Mode**:
-   - `asyncio.run(main(), debug=True)`
-   - Emits warnings whenever a coroutine blocks the event loop for longer than `slow_callback_duration` (default: 100ms).
+This dynamic applies universally to single-threaded event loops and cooperative coroutines:
+- **Node.js / TypeScript**: Promises, async/await, libuv event loop.
+- **Python `asyncio`**: Coroutine task scheduling, `await asyncio.sleep()`.
+
+When diagnosing slow async systems:
+1. If **Latency is High and CPU is High**: An on-CPU profiler (`pprof`, `py-spy`, Node `--cpu-prof`) will pinpoint synchronous loops, regexes, or serialization routines blocking the thread.
+2. If **Latency is High and CPU is Low**: An on-CPU profiler will be useless. The bottleneck is off-CPU waiting (database queries, network socket reads, downstream timeouts, or event loop queue delay). You need distributed traces or wall-clock/event-loop lag metrics.

@@ -1,6 +1,6 @@
 # Learning Notes
 
-This folder is a personal, lightweight knowledge repository for documenting real observations, counterintuitive behaviors, and takeaways encountered while running experiments or debugging production systems.
+This folder is a personal repository for documenting real observations, counterintuitive behaviors, and takeaways encountered while running experiments or debugging systems.
 
 ---
 
@@ -11,7 +11,6 @@ notes/YYYY-MM-DD-<topic-slug>.md
 ```
 
 Examples:
-- `notes/2026-10-01-retry-amplification-incident.md`
 - `notes/2026-10-15-cfs-throttling-gotcha.md`
 - `notes/2026-11-02-coredns-ndots-amplification.md`
 
@@ -19,12 +18,10 @@ Examples:
 
 ## Template
 
-Use [`notes/template.md`](file:///notes/template.md) when adding a new note.
+Use [template.md](template.md) when recording a new learning note.
 
 ---
 
-## Index of Notes
+## Notes Index
 
-| Date | Topic | Summary |
-|---|---|---|
-| 2026-10-01 | [Retry Amplification & Cascade](file:///notes/2026-10-01-retry-amplification-incident.md) | How naive 3x retries across a 4-tier chain converted a 5% error rate into a 27x load spike and cluster collapse. |
+*(Add notes as you conduct experiments and debug systems).*

@@ -1,0 +1,16 @@
+{
+  "name": "async-aware-profiling-lab",
+  "version": "0.1.0",
+  "description": "Lab demonstrating async waiting vs CPU-bound event loop blocking",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  }
+}
