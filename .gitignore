@@ -1,0 +1,55 @@
+# Binaries and build artifacts
+bin/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+pprof/
+*.pprof
+*.svg
+cpu.prof
+mem.prof
+profile.pb.gz
+
+# Go
+vendor/
+go.work
+
+# Node / TypeScript
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+env/
+venv/
+ENV/
+
+# Temporary / Scratch
+tmp/
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker / Kubernetes local state
+.kind/
+kubeconfig
+docker-compose.override.yml

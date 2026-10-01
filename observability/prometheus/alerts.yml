@@ -1,0 +1,35 @@
+groups:
+  - name: reliability_service_alerts
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Target instance {{ $labels.instance }} is unreachable"
+          description: "Service has failed to respond to Prometheus scrapes for > 15s."
+
+      - alert: HighHTTPErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[1m]))
+            /
+            sum(rate(http_requests_total[1m]))
+          ) > 0.05
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "HTTP 5xx error rate exceeds 5%"
+          description: "Over 5% of all requests are failing with server errors."
+
+      - alert: HighTailLatencyP99
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[1m])) by (le)) > 0.5
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "p99 latency exceeds 500ms"
+          description: "Tail latency (p99) is currently above 500ms for > 30s."
