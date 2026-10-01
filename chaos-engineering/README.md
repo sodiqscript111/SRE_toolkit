@@ -23,5 +23,6 @@ flowchart TD
 ## Executable Labs
 
 - [Chaos Mesh on Local Kubernetes](chaos-mesh/README.md) – End-to-end lab on `kind` demonstrating `PodChaos` and `NetworkChaos`.
+- [Chaos Monkey Local Runner](chaos-monkey/README.md) – Netflix instance termination pattern and local Go container/simulation runner.
 
-*(Future chaos patterns such as instance termination and cloud-level failure injection are tracked in [ROADMAP.md](../ROADMAP.md))*.
+*(Future chaos patterns such as cross-region partitions and disk IO corruption are tracked in [ROADMAP.md](../ROADMAP.md))*.

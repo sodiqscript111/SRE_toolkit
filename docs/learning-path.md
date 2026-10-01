@@ -42,10 +42,10 @@ flowchart TD
 - **Directory**: [profiling/async-aware/](../profiling/async-aware/README.md)
 - **Hands-On**: Compare synchronous CPU-bound blocks (`/cpu`) against asynchronous I/O waiting (`/io`) in a TypeScript service.
 
-### Module 6: Chaos Engineering on Kubernetes
-- **Concepts**: Controlled hypothesis-driven fault injection. Steady-state verification. Pod termination and network latency injection.
-- **Directory**: [chaos-engineering/chaos-mesh/](../chaos-engineering/chaos-mesh/README.md)
-- **Hands-On**: Spin up a local `kind` cluster, install Chaos Mesh, deploy the 3-replica echo application, and apply `PodChaos` and `NetworkChaos`.
+### Module 6: Chaos Engineering (Chaos Mesh & Chaos Monkey)
+- **Concepts**: Controlled hypothesis-driven fault injection. Steady-state verification. Randomized instance termination (Chaos Monkey) and orchestrated Kubernetes faults (Chaos Mesh).
+- **Directories**: [chaos-engineering/chaos-mesh/](../chaos-engineering/chaos-mesh/README.md), [chaos-engineering/chaos-monkey/](../chaos-engineering/chaos-monkey/README.md)
+- **Hands-On**: Execute in-memory and container pool termination via Chaos Monkey, then spin up a local `kind` cluster with Chaos Mesh to test `PodChaos` and `NetworkChaos`.
 
 ---
 

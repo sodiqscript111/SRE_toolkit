@@ -22,6 +22,7 @@ Status Definitions:
 | **Flame Graphs** | ✅ Complete | Practical diagnostic guide building on CPU lab: sampling, reading frames, optimizing code, and differential flame graphs. | [profiling/flamegraphs/](profiling/flamegraphs/README.md) |
 | **Async-Aware Profiling** | ✅ Complete | TypeScript/Node.js service illustrating CPU-bound event loop blocking vs async I/O waiting. | [profiling/async-aware/](profiling/async-aware/README.md) |
 | **Chaos Mesh on Kubernetes** | ✅ Complete | Disposable `kind` lab with target deployment, `PodChaos`, and `NetworkChaos` manifests. | [chaos-engineering/chaos-mesh/](chaos-engineering/chaos-mesh/README.md) |
+| **Chaos Monkey** | ✅ Complete | Netflix randomized instance termination pattern with local Go simulation and container runner. | [chaos-engineering/chaos-monkey/](chaos-engineering/chaos-monkey/README.md) |
 | **Reliability Concepts & Glossary** | 📚 Notes only | Reference documentation covering failure dynamics, mathematical definitions, and learning sequence. | [docs/](docs/reliability-engineering.md) |
 
 ---

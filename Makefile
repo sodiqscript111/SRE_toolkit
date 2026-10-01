@@ -1,4 +1,4 @@
-.PHONY: help up down smoke load stress spike profile-cpu kind-up kind-down chaos-app chaos-pod chaos-network chaos-clean test clean
+.PHONY: help up down smoke load stress spike profile-cpu kind-up kind-down chaos-app chaos-pod chaos-network chaos-clean monkey-sim monkey-up monkey-down monkey-run test clean
 
 help: ## Show this help menu
 	@echo "SRE Toolkit / Reliability Lab Commands:"
@@ -49,11 +49,25 @@ chaos-clean: ## Remove chaos experiments and target application
 	kubectl delete -f chaos-engineering/chaos-mesh/experiments/network-delay.yaml --ignore-not-found
 	kubectl delete -f chaos-engineering/chaos-mesh/k8s/ --ignore-not-found
 
+# Chaos Monkey
+monkey-sim: ## Run Chaos Monkey in simulated mode (in-memory)
+	go run chaos-engineering/chaos-monkey/main.go -simulate=true -rounds=3
+
+monkey-up: ## Start local container pool for Chaos Monkey
+	docker compose -f chaos-engineering/chaos-monkey/docker-compose.yml up -d
+
+monkey-down: ## Stop local container pool for Chaos Monkey
+	docker compose -f chaos-engineering/chaos-monkey/docker-compose.yml down
+
+monkey-run: ## Run Chaos Monkey against local container pool
+	go run chaos-engineering/chaos-monkey/main.go -target=chaos-monkey-worker -probability=0.7 -rounds=3
+
 # Testing & Hygiene
 test: ## Run tests across Go packages
 	cd observability/demo-app && go test -v ./...
 	cd profiling/cpu/app && go test -v ./...
 	cd chaos-engineering/chaos-mesh/app && go test -v ./...
+	cd chaos-engineering/chaos-monkey && go test -v ./...
 
 clean: ## Clean up temporary profile dumps and build files
 	rm -rf *.pprof *.pb.gz bin/ dist/

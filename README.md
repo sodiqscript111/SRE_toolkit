@@ -20,7 +20,7 @@ Every major module in this v0.1 release includes working code, reproducible load
 | [`observability/`](observability/README.md) | Metrics & Dashboards | Prometheus metrics collection, custom alerts, auto-provisioned Grafana dashboards, and an instrumented Go demo app. |
 | [`performance-testing/`](performance-testing/README.md) | k6 Load Suite | Executable smoke, load, stress, and spike test scripts targeting the demo service. |
 | [`profiling/`](profiling/README.md) | Runtime Diagnostics | On-CPU profiling with Go `pprof` ([cpu/](profiling/cpu/README.md)), [Flame Graphs](profiling/flamegraphs/README.md), and [Async-Aware Profiling](profiling/async-aware/README.md) in TypeScript. |
-| [`chaos-engineering/`](chaos-engineering/README.md) | Fault Injection | Disposable local Kubernetes lab on `kind` using [Chaos Mesh](chaos-engineering/chaos-mesh/README.md) (`PodChaos` and `NetworkChaos`). |
+| [`chaos-engineering/`](chaos-engineering/README.md) | Fault Injection | Disposable local Kubernetes lab on `kind` using [Chaos Mesh](chaos-engineering/chaos-mesh/README.md) (`PodChaos`, `NetworkChaos`) and local [Chaos Monkey](chaos-engineering/chaos-monkey/README.md) runner. |
 | [`notes/`](notes/README.md) | Field Observations | Lightweight template for recording real incident observations, postmortems, and experiment takeaways. |
 
 ---
@@ -76,13 +76,19 @@ npm start
 ```
 Test the difference between synchronous CPU-bound blocks (`curl http://localhost:8086/cpu`) and async I/O waiting (`curl http://localhost:8086/io`). See [profiling/async-aware/README.md](profiling/async-aware/README.md).
 
-### 4. Chaos Mesh on Kubernetes
-Test pod termination and network latency injection in a local `kind` cluster:
-```bash
-# Follow instructions in chaos-engineering/chaos-mesh/README.md
-kubectl apply -f chaos-engineering/chaos-mesh/k8s/
-kubectl apply -f chaos-engineering/chaos-mesh/experiments/pod-kill.yaml
-```
+### 4. Chaos Engineering (Chaos Mesh & Chaos Monkey)
+- **Chaos Mesh on Kubernetes**: Test pod termination and network latency injection in a local `kind` cluster (see [chaos-engineering/chaos-mesh/README.md](chaos-engineering/chaos-mesh/README.md)).
+- **Chaos Monkey Local Runner**: Test randomized container termination against a local worker pool or in-memory simulation:
+  ```bash
+  # In-memory simulation
+  go run chaos-engineering/chaos-monkey/main.go -simulate=true -rounds=3
+
+  # Live container termination
+  make monkey-up
+  make monkey-run
+  make monkey-down
+  ```
+  See [chaos-engineering/chaos-monkey/README.md](chaos-engineering/chaos-monkey/README.md).
 
 ---
 
@@ -97,6 +103,10 @@ make load        # Run k6 standard load test
 make stress      # Run k6 stress test
 make spike       # Run k6 spike test
 make profile-cpu # Capture 20s CPU profile from cpu lab
+make monkey-sim  # Run Chaos Monkey in simulated mode
+make monkey-up   # Start Chaos Monkey local container pool
+make monkey-run  # Run Chaos Monkey against local container pool
+make monkey-down # Stop Chaos Monkey local container pool
 make test        # Run unit tests across Go packages
 make clean       # Remove build binaries and profile dumps
 ```
